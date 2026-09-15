@@ -795,8 +795,8 @@
         <div class="lead">I know I hurt you, and I'm sorry.</div>
         <div class="question">Will you forgive me?</div>
         <div class="btn-field">
-          <button class="btn btn-no" id="forgiveNo">No</button>
           <button class="btn btn-yes" id="forgiveYes">Yes</button>
+          <button class="btn btn-no" id="forgiveNo">No</button>
         </div>
       </section>
 
@@ -804,8 +804,8 @@
       <section id="love">
         <h2>There's one more thing I need to ask you.<br>Do you love me?</h2>
         <div class="btn-field">
-          <button class="btn btn-no" id="loveNo">No</button>
           <button class="btn btn-yes" id="loveYes">Yes</button>
+          <button class="btn btn-no" id="loveNo">No</button>
         </div>
       </section>
 
@@ -1010,48 +1010,35 @@
     function makeDodge(btn, field) {
       const section = field.parentElement;
       let clickCount = 0;
+      let touched = false;
 
-      // Make sure button is inside section and absolutely positioned
-      if (btn.parentElement !== section) section.appendChild(btn);
-      btn.style.position = 'absolute';
-      btn.style.zIndex = '9999';
-      btn.style.transition = 'left 0.15s ease, top 0.15s ease';
-
-      function getYesRect() {
-        const yesBtn = section.querySelector('.btn-yes');
-        return yesBtn ? yesBtn.getBoundingClientRect() : null;
+      function returnToStart() {
+        if (btn.parentElement !== field) {
+          field.appendChild(btn);
+        }
+        btn.style.position = '';
+        btn.style.left = '';
+        btn.style.top = '';
+        btn.style.transform = '';
+        btn.style.zIndex = '';
+        btn.style.transition = 'all 0.25s ease';
       }
 
-      function snapToYes() {
-        // Position right of the Yes button, aligned vertically with it
-        const yesBtn = section.querySelector('.btn-yes');
-        if (!yesBtn) return;
-        const sectionRect = section.getBoundingClientRect();
-        const yesRect = yesBtn.getBoundingClientRect();
-        // Place it to the right of Yes, same vertical center
-        const x = yesRect.right - sectionRect.left + 16;
-        const y = yesRect.top - sectionRect.top + (yesRect.height / 2) - (btn.offsetHeight / 2);
-        // Clamp within section
-        const maxX = section.clientWidth - btn.offsetWidth - 10;
-        const maxY = section.clientHeight - btn.offsetHeight - 10;
-        btn.style.left = Math.min(Math.max(x, 10), maxX) + 'px';
-        btn.style.top = Math.min(Math.max(y, 10), maxY) + 'px';
-      }
-
-      function dodge() {
-        clickCount++;
-
-        if (clickCount % 2 === 0) {
-          // Every 2nd interaction: snap back next to Yes
-          snapToYes();
-          return;
+      function dodgeAway() {
+        if (btn.parentElement !== section) {
+          section.appendChild(btn);
         }
 
-        // Random dodge — strictly clamped inside section
+        btn.style.position = 'absolute';
+        btn.style.zIndex = '9999';
+        btn.style.transform = 'translate(0, 0)';
+        btn.style.transition = 'all 0.25s cubic-bezier(0.25, 1, 0.5, 1)';
+
         const padding = 20;
-        const bw = btn.offsetWidth, bh = btn.offsetHeight;
-        const maxX = section.clientWidth - bw - padding;
-        const maxY = section.clientHeight - bh - padding;
+        const bw = btn.offsetWidth || 80;
+        const bh = btn.offsetHeight || 45;
+        const maxX = Math.max(padding, section.clientWidth - bw - padding);
+        const maxY = Math.max(padding, section.clientHeight - bh - padding);
 
         const x = Math.max(padding, Math.random() * maxX);
         const y = Math.max(padding, Math.random() * maxY);
@@ -1060,15 +1047,33 @@
         btn.style.top = y + 'px';
       }
 
-      // Set initial position (to the right of Yes) immediately
-      snapToYes();
-      // Also ensure button stays within bounds on resize
-      window.addEventListener('resize', snapToYes);
+      function handleClick(e) {
+        if (e) e.preventDefault();
+        clickCount++;
 
-      btn.addEventListener('pointerenter', dodge);
-      btn.addEventListener('pointerdown', (e) => { e.preventDefault(); dodge(); });
-      btn.addEventListener('touchstart', (e) => { e.preventDefault(); dodge(); }, { passive: false });
-      btn.addEventListener('click', (e) => { e.preventDefault(); });
+        if (clickCount % 2 === 0) {
+          // Every 2nd click: return right next to Yes in original place
+          returnToStart();
+        } else {
+          // 1st, 3rd, etc.: move away
+          dodgeAway();
+        }
+      }
+
+      // ONLY triggers when clicked/tapped — does NOT dodge on hover
+      btn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        touched = true;
+        handleClick(e);
+      }, { passive: false });
+
+      btn.addEventListener('click', (e) => {
+        if (touched) {
+          touched = false;
+          return;
+        }
+        handleClick(e);
+      });
     }
 
     const forgiveField = document.querySelector('#forgive .btn-field');
