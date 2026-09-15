@@ -622,7 +622,7 @@
 <body class="locked">
   <!-- Invisible iOS audio unlock layer - zero UI impact -->
   <div id="audioUnlock" style="position:fixed;inset:0;z-index:99999;background:transparent;cursor:default;"></div>
-  <audio id="bgMusic" src="Taylor%20Swift%20-%20Lover.mp3" loop preload="auto"></audio>
+  <audio id="bgMusic" src="music.mp3" loop preload="auto"></audio>
   
   <!-- ================= LOADER ================= -->
   <div id="loader">
@@ -672,7 +672,7 @@
         <div id="letter-text">
           <p>You are the best coincidence that ever happened in my life! You came crashing into my life like a roller coaster. I never expected you. Life has never been the same with you. You came without any warning and swept me off my feet. You became my greatest blessing. You became my comfort on difficult days, you were my smile, my happiness, and a reminder that the universe knew exactly what we wanted before we did.</p>
           <p>I can’t imagine how my life would have been without you, Ifshaa. Of course, you invented me, you made me who I am today. I can’t describe a future without you. It’s you, every time, everywhere. It’s you I want to spend my life with! You make my heart fuller. You’re my, my, my, my loverrr!! ❤️ I don’t want to look at anything else now that I saw you! You’re golden like daylight. This love is ours! However far you are, it’s not far enough — I will come for you. “You are the bane of my existence.” It’s you I yearn for! ♥</p>
-          <p>When I say I love you, I love everything about you — from the shiny days to the darkest nights, from you pampering me to you being mean to me. I want all of you, not only the good parts — all the good and bad, it’s for me, only me! I want the best for you. I’m happy that you’re in Punjab doing you, having fun — uni life, exams, internals, new friends, new memories. I don’t want to see you sad. I know I have made you cry several times — maybe I’m the worst thing that has happened to you in your shiny life. I’m sorry for that. I’m sorry for hurting you, causing you pain, confusion, everything. Enikk angne onum vendaa — I want a happy life for us! Only us! I don’t want to lose you. I want us to be together till infinity! Hang out with me for my whole life ♥ I want to experience everything with you, make every day special. Sometimes I go lazy (thalamandikk onn thanall madhii) — so Ifsha, you are mine and I’m not letting you go! You will always be mine.  <em>— LONDON BOY</em></p>
+          <p>When I say I love you, I love everything about you — from the shiny days to the darkest nights, from you pampering me to you being mean to me. I want all of you, not only the good parts — all the good and bad, it’s for me, only me! I want the best for you. I’m happy that you’re in Punjab doing you, having fun — uni life, exams, internals, new friends, new memories. I don’t want to see you sad. I know I have made you cry several times — maybe I’m the worst thing that has happened to you in your shiny life. I’m sorry for that. I’m sorry for hurting you, causing you pain, confusion, everything. Enikk angne onum vendaa — I want a happy life for us! Only us! I don’t want to lose you. I want us to be together till infinity! Hang out with me for my whole life ♥ I want to experience everything with you, make every day special. Sometimes I go lazy (thalamandikk onn thanall madhii) — so Ifsha, you are mine and I’m not letting you go! You will always be mine.  <em>LONDON BOY</em></p>
         </div>
       </div>
     </section>
@@ -973,8 +973,10 @@
         btn.style.top  = y + 'px';
       }
 
-      // Set initial position (to the right of Yes)
-      setTimeout(snapToYes, 50);
+      // Set initial position (to the right of Yes) immediately
+      snapToYes();
+      // Also ensure button stays within bounds on resize
+      window.addEventListener('resize', snapToYes);
 
       btn.addEventListener('pointerenter', dodge);
       btn.addEventListener('pointerdown',  (e) => { e.preventDefault(); dodge(); });
