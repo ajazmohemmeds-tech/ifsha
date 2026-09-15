@@ -621,8 +621,7 @@
 
 <body class="locked">
   <!-- Invisible iOS audio unlock layer - zero UI impact -->
-  <div id="audioUnlock" style="position:fixed;inset:0;z-index:99999;background:transparent;cursor:default;"></div>
-  <audio id="bgMusic" src="music.mp3" loop preload="auto"></audio>
+    <audio id="bgMusic" src="music.mp3" loop preload="auto"></audio>
   
   <!-- ================= LOADER ================= -->
   <div id="loader">
@@ -740,40 +739,42 @@
   </div>
 
   <script>
-    // ---------- Music & Auto-start (iOS-safe) ----------
+    // ---------- Music & Loader (Always loads smoothly + iOS audio unlock) ----------
     const bgMusic = document.getElementById('bgMusic');
     bgMusic.volume = 0.5;
 
-    const audioUnlock = document.getElementById('audioUnlock');
-
-    function startEverything() {
-      // Remove overlay so normal interaction works
-      if (audioUnlock) audioUnlock.remove();
-
-      // Play audio synchronously inside this gesture — the ONLY way iOS allows it
-      bgMusic.play().catch(e => console.warn('Audio play failed:', e));
-
-      // Start the loader countdown
-      setTimeout(() => {
-        document.getElementById('loader').classList.add('hide');
-        document.body.classList.remove('locked');
-      }, 2800);
+    // 1. Website ALWAYS loads and unlocks automatically
+    function hideLoader() {
+      const loader = document.getElementById('loader');
+      if (loader) loader.classList.add('hide');
+      document.body.classList.remove('locked');
     }
 
-    // iOS: must be inside touchstart/click synchronously
-    if (audioUnlock) {
-      audioUnlock.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        startEverything();
-      }, { once: true, passive: false });
+    // Start loader hide countdown on page load
+    window.addEventListener('load', () => {
+      setTimeout(hideLoader, 2800);
+      // Attempt autoplay immediately
+      bgMusic.play().catch(() => {
+        console.log('Autoplay waiting for user gesture');
+      });
+    });
 
-      audioUnlock.addEventListener('click', () => {
-        startEverything();
-      }, { once: true });
-    } else {
-      // Fallback if overlay missing
-      window.addEventListener('load', startEverything, { once: true });
+    // Fallback: If window load already fired or takes too long, ensure page opens
+    setTimeout(hideLoader, 3500);
+
+    // 2. iOS Audio Unlock: Catch ANY touch or click anywhere to play audio immediately
+    function unlockAudio() {
+      if (bgMusic.paused) {
+        bgMusic.play().then(() => {
+          ['touchstart', 'touchend', 'click', 'pointerdown'].forEach(ev => {
+            document.removeEventListener(ev, unlockAudio, true);
+          });
+        }).catch(() => {});
+      }
     }
+    ['touchstart', 'touchend', 'click', 'pointerdown'].forEach(ev => {
+      document.addEventListener(ev, unlockAudio, { capture: true, passive: true });
+    });
 
     // ---------- Lenis Smooth Scroll ----------
     const lenis = new Lenis();
@@ -855,6 +856,17 @@
           const hiddenSections = document.getElementById('hiddenSections');
           hiddenSections.style.display = 'block';
           lenis.resize(); // crucial!
+          setTimeout(() => {
+            const forgiveNo = document.getElementById('forgiveNo');
+            const forgiveYes = document.getElementById('forgiveYes');
+            const forgiveSec = document.getElementById('forgive');
+            if (forgiveNo && forgiveYes && forgiveSec) {
+              const sRect = forgiveSec.getBoundingClientRect();
+              const yRect = forgiveYes.getBoundingClientRect();
+              forgiveNo.style.left = (yRect.right - sRect.left + 16) + 'px';
+              forgiveNo.style.top = (yRect.top - sRect.top) + 'px';
+            }
+          }, 100);
           
           // Fade in
           setTimeout(() => {
@@ -936,17 +948,14 @@
       }
 
       function snapToYes() {
-        // Position right of the Yes button, aligned vertically with it
         const yesBtn = section.querySelector('.btn-yes');
-        if (!yesBtn) return;
+        if (!yesBtn || section.clientWidth === 0 || section.clientHeight === 0) return;
         const sectionRect = section.getBoundingClientRect();
         const yesRect = yesBtn.getBoundingClientRect();
-        // Place it to the right of Yes, same vertical center
         const x = yesRect.right - sectionRect.left + 16;
         const y = yesRect.top - sectionRect.top + (yesRect.height / 2) - (btn.offsetHeight / 2);
-        // Clamp within section
-        const maxX = section.clientWidth - btn.offsetWidth - 10;
-        const maxY = section.clientHeight - btn.offsetHeight - 10;
+        const maxX = Math.max(0, section.clientWidth - btn.offsetWidth - 10);
+        const maxY = Math.max(0, section.clientHeight - btn.offsetHeight - 10);
         btn.style.left = Math.min(Math.max(x, 10), maxX) + 'px';
         btn.style.top  = Math.min(Math.max(y, 10), maxY) + 'px';
       }
@@ -1000,6 +1009,15 @@
       const loveSection = document.getElementById('love');
       loveSection.style.display = 'flex';
       setTimeout(() => {
+        const loveNo = document.getElementById('loveNo');
+        const loveYes = document.getElementById('loveYes');
+        if (loveNo && loveYes && loveSection.clientWidth > 0) {
+          const sRect = loveSection.getBoundingClientRect();
+          const yRect = loveYes.getBoundingClientRect();
+          loveNo.style.left = (yRect.right - sRect.left + 16) + 'px';
+          loveNo.style.top = (yRect.top - sRect.top) + 'px';
+        }
+        lenis.resize();
         lenis.scrollTo(loveSection, { offset: 0, duration: 1.2 });
       }, 1500);
     }
