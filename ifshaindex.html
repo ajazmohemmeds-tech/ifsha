@@ -620,6 +620,8 @@
 </head>
 
 <body class="locked">
+  <!-- Invisible iOS audio unlock layer - zero UI impact -->
+  <div id="audioUnlock" style="position:fixed;inset:0;z-index:99999;background:transparent;cursor:default;"></div>
   <audio id="bgMusic" src="Taylor%20Swift%20-%20Lover.mp3" loop preload="auto"></audio>
   
   <!-- ================= LOADER ================= -->
@@ -738,35 +740,40 @@
   </div>
 
   <script>
-    // ---------- Music & Auto-start ----------
+    // ---------- Music & Auto-start (iOS-safe) ----------
     const bgMusic = document.getElementById('bgMusic');
     bgMusic.volume = 0.5;
 
-    window.addEventListener('load', () => {
+    const audioUnlock = document.getElementById('audioUnlock');
+
+    function startEverything() {
+      // Remove overlay so normal interaction works
+      if (audioUnlock) audioUnlock.remove();
+
+      // Play audio synchronously inside this gesture — the ONLY way iOS allows it
+      bgMusic.play().catch(e => console.warn('Audio play failed:', e));
+
+      // Start the loader countdown
       setTimeout(() => {
         document.getElementById('loader').classList.add('hide');
         document.body.classList.remove('locked');
       }, 2800);
-      
-      // Attempt autoplay
-      bgMusic.play().catch(e => console.log('Autoplay blocked:', e));
-    });
+    }
 
-    // Aggressive fallback: try to play music on ANY click or touch until it works
-    const forcePlay = () => {
-      if (bgMusic.paused) {
-        bgMusic.play().then(() => {
-          console.log('Music started successfully!');
-          window.removeEventListener('click', forcePlay);
-          window.removeEventListener('touchstart', forcePlay);
-        }).catch(e => console.log('Click play failed:', e));
-      } else {
-        window.removeEventListener('click', forcePlay);
-        window.removeEventListener('touchstart', forcePlay);
-      }
-    };
-    window.addEventListener('click', forcePlay);
-    window.addEventListener('touchstart', forcePlay, { passive: true });
+    // iOS: must be inside touchstart/click synchronously
+    if (audioUnlock) {
+      audioUnlock.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        startEverything();
+      }, { once: true, passive: false });
+
+      audioUnlock.addEventListener('click', () => {
+        startEverything();
+      }, { once: true });
+    } else {
+      // Fallback if overlay missing
+      window.addEventListener('load', startEverything, { once: true });
+    }
 
     // ---------- Lenis Smooth Scroll ----------
     const lenis = new Lenis();
